@@ -1,0 +1,11 @@
+name = "jpkr-tmdb"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Secret à configurer via :
+#   cd worker && npx wrangler secret put TMDB_BEARER
+# (utilise un Bearer Token TMDB v4, pas la clé v3)
+#
+# Variable publique (origines GitHub Pages séparées par des virgules) :
+[vars]
+ALLOWED_ORIGINS = ""
