@@ -30,10 +30,12 @@ npm run preview
 
 Push sur `main` → workflow GitHub Actions `Deploy to GitHub Pages` (voir `.github/workflows/deploy.yml`).
 
-Secrets à configurer dans le repo (`Settings → Secrets → Actions`) :
+Variables à configurer dans le repo (`Settings → Secrets and variables → Actions → onglet Variables → New repository variable`) — pas en Secrets, car Vite inline ces valeurs dans le bundle client (elles ne sont pas confidentielles) :
 - `VITE_TMDB_PROXY_URL`
 - `VITE_UMAMI_WEBSITE_ID`
 - `VITE_UMAMI_SRC`
+
+La seule valeur réellement secrète (`TMDB_BEARER`) reste configurée côté Cloudflare Worker via `wrangler secret put`.
 
 Activer Pages : `Settings → Pages → Build and deployment → Source = GitHub Actions`.
 

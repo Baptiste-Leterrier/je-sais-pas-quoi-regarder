@@ -29,9 +29,9 @@ jobs:
 
       - name: Build
         env:
-          VITE_TMDB_PROXY_URL: ${{ secrets.VITE_TMDB_PROXY_URL }}
-          VITE_UMAMI_WEBSITE_ID: ${{ secrets.VITE_UMAMI_WEBSITE_ID }}
-          VITE_UMAMI_SRC: ${{ secrets.VITE_UMAMI_SRC }}
+          VITE_TMDB_PROXY_URL: ${{ vars.VITE_TMDB_PROXY_URL }}
+          VITE_UMAMI_WEBSITE_ID: ${{ vars.VITE_UMAMI_WEBSITE_ID }}
+          VITE_UMAMI_SRC: ${{ vars.VITE_UMAMI_SRC }}
         run: npm run build
 
       - uses: actions/configure-pages@v5
