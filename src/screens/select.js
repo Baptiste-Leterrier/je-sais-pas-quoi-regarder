@@ -82,7 +82,7 @@ export function renderSelect(root, navigate) {
     const candidates = getState().candidates;
     if (candidates.length < MIN_CANDIDATES) return;
     const tournament = createTournament(candidates);
-    setState({ tournament });
+    setState({ tournament, flow: 'tournament' });
     track('tournament_started', { count: candidates.length, types: countTypes(candidates) });
     navigate('#/tournament');
   }

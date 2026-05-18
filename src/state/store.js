@@ -1,9 +1,10 @@
 import { load, save } from '../lib/storage.js';
 
-const VERSION = 1;
+const VERSION = 2;
 
 const defaultState = {
   version: VERSION,
+  flow: null,
   candidates: [],
   tournament: null,
   discover: {
@@ -11,10 +12,9 @@ const defaultState = {
       type: null,
       genres: [],
       era: null,
-      keyword: null,
+      themes: [],
+      themesAsked: false,
     },
-    suggestion: null,
-    pool: [],
   },
   finalChoice: null,
 };

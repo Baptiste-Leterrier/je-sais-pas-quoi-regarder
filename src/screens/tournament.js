@@ -1,18 +1,35 @@
 import { getState, setState } from '../state/store.js';
-import { applyChoice, nextDuel, getRoundLabel, restartFromInitial } from '../lib/tournament.js';
+import { applyChoice, nextDuel, restartFromInitial } from '../lib/tournament.js';
 import { track } from '../analytics/umami.js';
 import { duelCard } from '../components/duelCard.js';
 import { topbar } from './_topbar.js';
 
+const DUEL_TIMEOUT_MS = 25000;
+
+let activeTimer = null;
+
+function clearDuelTimer() {
+  if (activeTimer) {
+    clearTimeout(activeTimer);
+    activeTimer = null;
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('hashchange', clearDuelTimer);
+}
+
 export function renderTournament(root, navigate) {
+  clearDuelTimer();
+
   const t = getState().tournament;
   if (!t) {
-    navigate('#/select');
+    navigate('#/');
     return;
   }
 
   root.innerHTML = '';
-  root.appendChild(topbar({ navigate, backHref: '#/select' }));
+  root.appendChild(topbar({ navigate, backHref: '#/' }));
 
   const shell = document.createElement('main');
   shell.className = 'shell';
@@ -24,6 +41,7 @@ export function renderTournament(root, navigate) {
       winner_type: t.winner.type,
       winner_year: t.winner.year,
       total_candidates: t.initial.length,
+      flow: getState().flow || 'tournament',
     });
     navigate('#/result');
     return;
@@ -45,21 +63,12 @@ export function renderTournament(root, navigate) {
   const tournamentEl = document.createElement('section');
   tournamentEl.className = 'tournament';
 
-  const progress = document.createElement('div');
-  progress.className = 'tournament__progress';
-  const remaining = t.queue.length + t.winners.length;
-  progress.innerHTML = `
-    <span>${getRoundLabel(t)}</span>
-    <span>${remaining} en lice</span>
-  `;
-  tournamentEl.appendChild(progress);
-
   if (duel.type === 'bye') {
     const byeBlock = document.createElement('div');
     byeBlock.className = 'empty-state';
     byeBlock.innerHTML = `
-      <h2>${duel.a.title} passe au tour suivant</h2>
-      <p>Pas de duel disponible (nombre impair).</p>
+      <h2>${escape(duel.a.title)} passe directement</h2>
+      <p>Pas de duel disponible.</p>
     `;
     const cont = document.createElement('button');
     cont.type = 'button';
@@ -73,29 +82,56 @@ export function renderTournament(root, navigate) {
     byeBlock.appendChild(cont);
     tournamentEl.appendChild(byeBlock);
   } else {
+    const timer = document.createElement('div');
+    timer.className = 'duel-timer';
+    const fill = document.createElement('div');
+    fill.className = 'duel-timer__fill';
+    fill.style.setProperty('--duel-timer-duration', `${DUEL_TIMEOUT_MS}ms`);
+    timer.appendChild(fill);
+    tournamentEl.appendChild(timer);
+
     const duelEl = document.createElement('div');
     duelEl.className = 'duel';
     duelEl.appendChild(duelCard(duel.a, () => choose('a')));
     duelEl.appendChild(duelCard(duel.b, () => choose('b')));
     tournamentEl.appendChild(duelEl);
 
-    const noneWrap = document.createElement('div');
-    noneWrap.className = 'duel__none';
-    const noneBtn = document.createElement('button');
-    noneBtn.type = 'button';
-    noneBtn.className = 'btn btn--ghost';
-    noneBtn.textContent = 'Aucun des deux';
-    noneBtn.addEventListener('click', () => choose('none'));
-    noneWrap.appendChild(noneBtn);
-    tournamentEl.appendChild(noneWrap);
+    const actions = document.createElement('div');
+    actions.className = 'duel__actions';
+
+    const noMatter = document.createElement('button');
+    noMatter.type = 'button';
+    noMatter.className = 'btn';
+    noMatter.textContent = 'Peu importe';
+    noMatter.addEventListener('click', () => {
+      const pick = Math.random() < 0.5 ? 'a' : 'b';
+      choose(pick, 'indifferent');
+    });
+    actions.appendChild(noMatter);
+
+    const none = document.createElement('button');
+    none.type = 'button';
+    none.className = 'btn btn--ghost';
+    none.textContent = 'Aucun des deux';
+    none.addEventListener('click', () => choose('none'));
+    actions.appendChild(none);
+
+    tournamentEl.appendChild(actions);
+
+    activeTimer = setTimeout(() => {
+      activeTimer = null;
+      const pick = Math.random() < 0.5 ? 'a' : 'b';
+      choose(pick, 'timeout');
+    }, DUEL_TIMEOUT_MS);
   }
 
   shell.appendChild(tournamentEl);
   root.appendChild(shell);
 
-  function choose(c) {
+  function choose(c, via) {
+    clearDuelTimer();
     const before = getState().tournament;
-    track('duel_choice', { round: before.round, choice: c });
+    track('duel_choice', { choice: c, via: via || 'click' });
     const next = applyChoice(before, c);
     setState({ tournament: next });
     navigate('#/tournament', { force: true });
@@ -107,7 +143,7 @@ function renderAllEliminated(navigate) {
   wrap.className = 'empty-state';
   wrap.innerHTML = `
     <h2>Tous éliminés !</h2>
-    <p>Personne n'a survécu à ce tour. Que faire ?</p>
+    <p>Personne n'a survécu. Que faire ?</p>
   `;
   const actions = document.createElement('div');
   actions.style.display = 'flex';
@@ -139,4 +175,10 @@ function renderAllEliminated(navigate) {
   actions.appendChild(discoverBtn);
   wrap.appendChild(actions);
   return wrap;
+}
+
+function escape(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
 }

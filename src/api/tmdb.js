@@ -93,7 +93,7 @@ export async function discover(type, filters) {
     if (type === 'movie') params['primary_release_date.lte'] = `${filters.yearLte}-12-31`;
     else params['first_air_date.lte'] = `${filters.yearLte}-12-31`;
   }
-  if (filters.keywordId) params.with_keywords = String(filters.keywordId);
+  if (filters.keywordIds?.length) params.with_keywords = filters.keywordIds.join('|');
 
   const data = await call(`/discover/${type}`, params);
   const norm = type === 'movie' ? normalizeMovie : normalizeTv;

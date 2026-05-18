@@ -1,10 +1,11 @@
-import { getState, resetAll } from '../state/store.js';
+import { getState, resetAll, setState } from '../state/store.js';
 import { track } from '../analytics/umami.js';
 import { discover } from '../api/tmdb.js';
-import { pickRandom } from '../lib/shuffle.js';
-import { setState } from '../state/store.js';
+import { createTournament } from '../lib/tournament.js';
 import { topbar } from './_topbar.js';
 import { ERAS_LOOKUP } from './_eras.js';
+
+const TOURNAMENT_SIZE = 8;
 
 export function renderResult(root, navigate) {
   const state = getState();
@@ -13,6 +14,8 @@ export function renderResult(root, navigate) {
     navigate('#/');
     return;
   }
+
+  const flow = state.flow || 'tournament';
 
   root.innerHTML = '';
   root.appendChild(topbar({ navigate, backHref: '#/' }));
@@ -38,7 +41,7 @@ export function renderResult(root, navigate) {
   intro.style.fontSize = '14px';
   intro.style.letterSpacing = '0.05em';
   intro.style.textTransform = 'uppercase';
-  intro.textContent = state.tournament?.status === 'finished' ? 'Le gagnant du tournoi' : 'Notre suggestion';
+  intro.textContent = flow === 'discover' ? 'Le gagnant de votre tournoi' : 'Le gagnant du tournoi';
   info.appendChild(intro);
 
   const title = document.createElement('h1');
@@ -67,24 +70,19 @@ export function renderResult(root, navigate) {
   watch.className = 'btn btn--primary btn--lg';
   watch.textContent = 'On regarde ça !';
   watch.addEventListener('click', () => {
-    track('final_choice', {
-      id: choice.id,
-      type: choice.type,
-      year: choice.year,
-      source: state.tournament?.status === 'finished' ? 'tournament' : 'discover',
-    });
+    track('final_choice', { id: choice.id, type: choice.type, year: choice.year, source: flow });
     resetAll();
     navigate('#/');
   });
   actions.appendChild(watch);
 
-  if (state.discover?.suggestion?.id === choice.id) {
-    const another = document.createElement('button');
-    another.type = 'button';
-    another.className = 'btn';
-    another.textContent = 'Une autre idée';
-    another.addEventListener('click', () => suggestAnother(navigate));
-    actions.appendChild(another);
+  if (flow === 'discover') {
+    const newRun = document.createElement('button');
+    newRun.type = 'button';
+    newRun.className = 'btn';
+    newRun.textContent = 'Autres suggestions';
+    newRun.addEventListener('click', () => relaunchDiscoverTournament(navigate));
+    actions.appendChild(newRun);
 
     const restartQuiz = document.createElement('button');
     restartQuiz.type = 'button';
@@ -113,32 +111,37 @@ export function renderResult(root, navigate) {
   root.appendChild(shell);
 }
 
-async function suggestAnother(navigate) {
-  const d = getState().discover;
-  let pool = d.pool;
-  if (!pool || pool.length <= 1) {
-    try {
-      const refreshed = await discover(d.answers.type, rebuildFilters(d.answers));
-      pool = refreshed.slice(0, 10);
-    } catch {
+async function relaunchDiscoverTournament(navigate) {
+  const answers = getState().discover.answers;
+  if (!answers?.type) {
+    navigate('#/discover');
+    return;
+  }
+  const filters = buildFilters(answers);
+  try {
+    const pool = await discover(answers.type, filters);
+    if (!pool.length) {
+      navigate('#/discover');
       return;
     }
+    const selection = pool.slice(0, TOURNAMENT_SIZE);
+    setState({
+      tournament: createTournament(selection),
+      finalChoice: null,
+      flow: 'discover',
+    });
+    track('discover_relaunch', { pool_size: selection.length });
+    navigate('#/tournament');
+  } catch {
+    navigate('#/discover');
   }
-  const others = pool.filter((m) => m.id !== d.suggestion?.id);
-  const pick = pickRandom(others.length ? others : pool);
-  if (!pick) return;
-  setState({
-    discover: { ...d, suggestion: pick, pool },
-    finalChoice: pick,
-  });
-  track('discover_another', { id: pick.id });
-  navigate('#/result', { force: true });
 }
 
-function rebuildFilters(answers) {
+function buildFilters(answers) {
   const filters = { genres: answers.genres };
   const era = ERAS_LOOKUP[answers.era];
   if (era?.yearGte) filters.yearGte = era.yearGte;
   if (era?.yearLte) filters.yearLte = era.yearLte;
+  if (answers.themes?.length) filters.keywordIds = answers.themes.map((t) => t.id);
   return filters;
 }
