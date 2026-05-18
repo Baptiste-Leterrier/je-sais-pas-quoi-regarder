@@ -24,8 +24,8 @@ export function renderHome(root, navigate) {
   grid.className = 'mode-grid';
 
   grid.appendChild(modeCard({
-    title: 'Notre tournoi',
-    desc: 'On choisit chacun nos films préférés et on les fait s\'affronter en duels.',
+    title: 'Le tournoi',
+    desc: 'Chacun choisit ses films ou séries préférés et les fait s\'affronter en duels. Il ne peux en rester qu\'un !',
     onClick: () => {
       resetAll();
       track('mode_started', { mode: 'tournament' });
@@ -35,7 +35,7 @@ export function renderHome(root, navigate) {
 
   grid.appendChild(modeCard({
     title: 'Je sais pas quoi regarder',
-    desc: 'Quelques questions et on vous propose une idée.',
+    desc: 'Quelques questions et on vous propose des idée.',
     onClick: () => {
       resetAll();
       track('mode_started', { mode: 'discover' });
