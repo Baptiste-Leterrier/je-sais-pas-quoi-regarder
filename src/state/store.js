@@ -1,6 +1,6 @@
 import { load, save } from '../lib/storage.js';
 
-const VERSION = 2;
+const VERSION = 3;
 
 const defaultState = {
   version: VERSION,

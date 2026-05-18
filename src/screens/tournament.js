@@ -40,6 +40,7 @@ export function renderTournament(root, navigate) {
       winner_id: t.winner.id,
       winner_type: t.winner.type,
       winner_year: t.winner.year,
+      winner_decade: t.winner.year ? `${Math.floor(t.winner.year / 10) * 10}s` : 'unknown',
       total_candidates: t.initial.length,
       flow: getState().flow || 'tournament',
     });

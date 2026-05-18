@@ -55,15 +55,19 @@ worker/                # Cloudflare Worker proxy TMDB
 
 ## Tracking Umami
 
+Pour avoir des distributions exploitables dans Umami, les sélections multi-valeurs (genres, thèmes) sont émises atomiquement : un évenement par item sélectionné, avec le **nom** (pas l'ID).
+
 Évenements émis :
 - `mode_started` : `{ mode: 'tournament' | 'discover' }`
 - `candidate_added` : `{ id, type, total }`
-- `tournament_started` : `{ count, types }`
-- `duel_choice` : `{ round, choice: 'a' | 'b' | 'none' }`
-- `tournament_completed` : `{ winner_id, winner_type, winner_year, total_candidates }`
+- `tournament_started` : `{ count, types }` (depuis `select`)
+- `duel_choice` : `{ choice: 'a' | 'b' | 'none', via: 'click' | 'indifferent' | 'timeout' }`
+- `tournament_completed` : `{ winner_id, winner_type, winner_year, winner_decade, total_candidates, flow }`
 - `tournament_restart` : `{ reason }`
 - `tournament_to_discover` : `{ reason }`
-- `discover_step` : `{ step, value }`
-- `discover_completed` : `{ type, genres, era, has_keyword, suggested_id }`
-- `discover_another` : `{ id }`
-- `final_choice` : `{ id, type, year, source }`
+- `discover_step` : `{ step, count?, value? }`
+- `discover_genre_selected` : `{ name }` — un event par genre choisi
+- `discover_theme_selected` : `{ name }` — un event par thème choisi
+- `discover_completed` : `{ type, era, genres_count, themes_count, pool_size }`
+- `discover_relaunch` : `{ pool_size }`
+- `final_choice` : `{ id, type, year, source: 'tournament' | 'discover' }`

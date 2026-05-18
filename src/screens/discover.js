@@ -145,7 +145,9 @@ function renderGenresStep(parent, navigate) {
   continueBtn.disabled = true;
   continueBtn.style.marginLeft = 'auto';
   continueBtn.addEventListener('click', () => {
-    track('discover_step', { step: 'genres', value: getState().discover.answers.genres.join(',') });
+    const chosen = getState().discover.answers.genres;
+    chosen.forEach((g) => track('discover_genre_selected', { name: g.name }));
+    track('discover_step', { step: 'genres', count: chosen.length });
     navigate('#/discover', { force: true });
   });
   actions.appendChild(continueBtn);
@@ -158,7 +160,9 @@ function renderGenresStep(parent, navigate) {
       const type = getState().discover.answers.type;
       const genres = await getGenres(type);
       opts.innerHTML = '';
-      const selected = new Set(getState().discover.answers.genres);
+      const selected = new Map(
+        getState().discover.answers.genres.map((g) => [g.id, g]),
+      );
       genres.forEach((g) => {
         const chip = document.createElement('button');
         chip.type = 'button';
@@ -170,9 +174,9 @@ function renderGenresStep(parent, navigate) {
         };
         chip.addEventListener('click', () => {
           if (selected.has(g.id)) selected.delete(g.id);
-          else selected.add(g.id);
+          else selected.set(g.id, { id: g.id, name: g.name });
           const d = getState().discover;
-          setState({ discover: { ...d, answers: { ...d.answers, genres: [...selected] } } });
+          setState({ discover: { ...d, answers: { ...d.answers, genres: [...selected.values()] } } });
           refresh();
         });
         refresh();
@@ -294,7 +298,8 @@ function renderThemesStep(parent, navigate) {
         answers: { ...d.answers, themes, themesAsked: true },
       },
     });
-    track('discover_step', { step: 'themes', value: themes.length ? themes.map((t) => t.label).join(',') : 'skip' });
+    themes.forEach((t) => track('discover_theme_selected', { name: t.label }));
+    track('discover_step', { step: 'themes', count: themes.length });
     navigate('#/discover', { force: true });
   }
 }
@@ -331,9 +336,9 @@ function renderResultStep(parent, navigate) {
       });
       track('discover_completed', {
         type: answers.type,
-        genres: answers.genres.join(','),
         era: answers.era,
-        themes: answers.themes.map((t) => t.label).join(',') || 'none',
+        genres_count: answers.genres.length,
+        themes_count: answers.themes.length,
         pool_size: selection.length,
       });
       navigate('#/tournament');
@@ -344,7 +349,7 @@ function renderResultStep(parent, navigate) {
 }
 
 function buildFilters(answers) {
-  const filters = { genres: answers.genres };
+  const filters = { genres: answers.genres.map((g) => g.id) };
   const era = ERAS_LOOKUP[answers.era];
   if (era?.yearGte) filters.yearGte = era.yearGte;
   if (era?.yearLte) filters.yearLte = era.yearLte;

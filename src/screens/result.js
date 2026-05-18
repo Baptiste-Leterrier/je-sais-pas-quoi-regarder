@@ -138,7 +138,7 @@ async function relaunchDiscoverTournament(navigate) {
 }
 
 function buildFilters(answers) {
-  const filters = { genres: answers.genres };
+  const filters = { genres: answers.genres.map((g) => g.id) };
   const era = ERAS_LOOKUP[answers.era];
   if (era?.yearGte) filters.yearGte = era.yearGte;
   if (era?.yearLte) filters.yearLte = era.yearLte;
