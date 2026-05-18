@@ -17,7 +17,7 @@ export function renderHome(root, navigate) {
 
   const sub = document.createElement('p');
   sub.className = 'home__sub';
-  sub.textContent = 'Choisissez à deux votre prochain film ou série, sans débat sans fin.';
+  sub.textContent = 'Choisissez votre prochain film ou série, sans débat sans fin.';
   wrap.appendChild(sub);
 
   const grid = document.createElement('div');
