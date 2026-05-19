@@ -3,6 +3,7 @@ import './styles/tokens.css';
 import './styles/app.css';
 
 import { initUmami } from './analytics/umami.js';
+import { initPostHog } from './analytics/posthog.js';
 import { renderHome } from './screens/home.js';
 import { renderSelect } from './screens/select.js';
 import { renderTournament } from './screens/tournament.js';
@@ -40,4 +41,5 @@ window.addEventListener('hashchange', () => {
 });
 
 initUmami();
+initPostHog();
 render(location.hash || '#/');

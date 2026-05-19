@@ -1,6 +1,7 @@
 import { searchMulti } from '../api/tmdb.js';
 import { getState, setState } from '../state/store.js';
 import { track } from '../analytics/umami.js';
+import { capture } from '../analytics/posthog.js';
 import { createTournament } from '../lib/tournament.js';
 import { searchBar } from '../components/searchBar.js';
 import { movieCard } from '../components/movieCard.js';
@@ -69,6 +70,7 @@ export function renderSelect(root, navigate) {
     if (cands.some((c) => candidateKey(c) === candidateKey(movie))) return;
     setState({ candidates: [...cands, movie] });
     track('candidate_added', { id: movie.id, type: movie.type, total: cands.length + 1 });
+    capture('candidate_added', { id: movie.id, type: movie.type, total: cands.length + 1 });
     renderAll();
   }
 
@@ -84,6 +86,7 @@ export function renderSelect(root, navigate) {
     const tournament = createTournament(candidates);
     setState({ tournament, flow: 'tournament' });
     track('tournament_started', { count: candidates.length, types: countTypes(candidates) });
+    capture('tournament_started', { count: candidates.length, types: countTypes(candidates) });
     navigate('#/tournament');
   }
 

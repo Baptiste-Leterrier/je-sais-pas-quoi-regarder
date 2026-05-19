@@ -1,6 +1,7 @@
 import { getState, setState } from '../state/store.js';
 import { applyChoice, nextDuel, restartFromInitial } from '../lib/tournament.js';
 import { track } from '../analytics/umami.js';
+import { capture } from '../analytics/posthog.js';
 import { duelCard } from '../components/duelCard.js';
 import { topbar } from './_topbar.js';
 
@@ -37,6 +38,14 @@ export function renderTournament(root, navigate) {
   if (t.status === 'finished') {
     setState({ finalChoice: t.winner });
     track('tournament_completed', {
+      winner_id: t.winner.id,
+      winner_type: t.winner.type,
+      winner_year: t.winner.year,
+      winner_decade: t.winner.year ? `${Math.floor(t.winner.year / 10) * 10}s` : 'unknown',
+      total_candidates: t.initial.length,
+      flow: getState().flow || 'tournament',
+    });
+    capture('tournament_completed', {
       winner_id: t.winner.id,
       winner_type: t.winner.type,
       winner_year: t.winner.year,
@@ -133,6 +142,7 @@ export function renderTournament(root, navigate) {
     clearDuelTimer();
     const before = getState().tournament;
     track('duel_choice', { choice: c, via: via || 'click' });
+    capture('duel_choice', { choice: c, via: via || 'click' });
     const next = applyChoice(before, c);
     setState({ tournament: next });
     navigate('#/tournament', { force: true });
@@ -160,6 +170,7 @@ function renderAllEliminated(navigate) {
     const t = getState().tournament;
     setState({ tournament: restartFromInitial(t) });
     track('tournament_restart', { reason: 'all_eliminated' });
+    capture('tournament_restart', { reason: 'all_eliminated' });
     navigate('#/tournament', { force: true });
   });
 

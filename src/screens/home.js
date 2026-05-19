@@ -1,4 +1,5 @@
 import { track } from '../analytics/umami.js';
+import { capture } from '../analytics/posthog.js';
 import { resetAll } from '../state/store.js';
 
 export function renderHome(root, navigate) {
@@ -29,6 +30,7 @@ export function renderHome(root, navigate) {
     onClick: () => {
       resetAll();
       track('mode_started', { mode: 'tournament' });
+      capture('mode_started', { mode: 'tournament' });
       navigate('#/select');
     },
   }));
@@ -39,6 +41,7 @@ export function renderHome(root, navigate) {
     onClick: () => {
       resetAll();
       track('mode_started', { mode: 'discover' });
+      capture('mode_started', { mode: 'discover' });
       navigate('#/discover');
     },
   }));

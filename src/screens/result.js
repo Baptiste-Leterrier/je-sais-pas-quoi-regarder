@@ -1,5 +1,6 @@
 import { getState, resetAll, setState } from '../state/store.js';
 import { track } from '../analytics/umami.js';
+import { capture } from '../analytics/posthog.js';
 import { discover } from '../api/tmdb.js';
 import { createTournament } from '../lib/tournament.js';
 import { topbar } from './_topbar.js';
@@ -71,6 +72,7 @@ export function renderResult(root, navigate) {
   watch.textContent = 'On regarde ça !';
   watch.addEventListener('click', () => {
     track('final_choice', { id: choice.id, type: choice.type, year: choice.year, source: flow });
+    capture('final_choice', { id: choice.id, type: choice.type, year: choice.year, source: flow });
     resetAll();
     navigate('#/');
   });
@@ -131,6 +133,7 @@ async function relaunchDiscoverTournament(navigate) {
       flow: 'discover',
     });
     track('discover_relaunch', { pool_size: selection.length });
+    capture('discover_relaunch', { pool_size: selection.length });
     navigate('#/tournament');
   } catch {
     navigate('#/discover');

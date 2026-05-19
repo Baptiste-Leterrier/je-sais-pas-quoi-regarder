@@ -1,6 +1,7 @@
 import { getGenres, discover, searchKeyword } from '../api/tmdb.js';
 import { getState, setState } from '../state/store.js';
 import { track } from '../analytics/umami.js';
+import { capture } from '../analytics/posthog.js';
 import { createTournament } from '../lib/tournament.js';
 import { topbar } from './_topbar.js';
 import { ERAS, ERAS_LOOKUP } from './_eras.js';
@@ -106,6 +107,7 @@ function renderType(navigate) {
       const d = getState().discover;
       setState({ discover: { ...d, answers: { ...d.answers, type: value } } });
       track('discover_step', { step: 'type', value });
+      capture('discover_step', { step: 'type', value });
       navigate('#/discover', { force: true });
     }));
   });
@@ -148,6 +150,7 @@ function renderGenresStep(parent, navigate) {
     const chosen = getState().discover.answers.genres;
     chosen.forEach((g) => track('discover_genre_selected', { name: g.name }));
     track('discover_step', { step: 'genres', count: chosen.length });
+    capture('discover_step', { step: 'genres', count: chosen.length });
     navigate('#/discover', { force: true });
   });
   actions.appendChild(continueBtn);
@@ -206,6 +209,7 @@ function renderEra(navigate) {
       const d = getState().discover;
       setState({ discover: { ...d, answers: { ...d.answers, era: era.value } } });
       track('discover_step', { step: 'era', value: era.value });
+      capture('discover_step', { step: 'era', value: era.value });
       navigate('#/discover', { force: true });
     }));
   });
@@ -300,6 +304,7 @@ function renderThemesStep(parent, navigate) {
     });
     themes.forEach((t) => track('discover_theme_selected', { name: t.label }));
     track('discover_step', { step: 'themes', count: themes.length });
+    capture('discover_step', { step: 'themes', count: themes.length });
     navigate('#/discover', { force: true });
   }
 }
@@ -335,6 +340,13 @@ function renderResultStep(parent, navigate) {
         flow: 'discover',
       });
       track('discover_completed', {
+        type: answers.type,
+        era: answers.era,
+        genres_count: answers.genres.length,
+        themes_count: answers.themes.length,
+        pool_size: selection.length,
+      });
+      capture('discover_completed', {
         type: answers.type,
         era: answers.era,
         genres_count: answers.genres.length,
